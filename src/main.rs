@@ -24,6 +24,8 @@ enum Commands {
         repo_url: String,
         #[arg(short, long)]
         name: Option<String>,
+        #[arg(short, long)]
+        branch: Option<String>,
     },
     Build {
         service_name: String,
@@ -39,12 +41,11 @@ enum Commands {
     },
     List,
 }
-
 fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Add { repo_url, name } => commands::add::run(repo_url, name),
+        Commands::Add { repo_url, name, branch } => commands::add::run(repo_url, name, branch),
         Commands::Build { service_name } => commands::build::run(service_name),
         Commands::Delete { service_name } => commands::delete::run(service_name),
         Commands::List => commands::list::run(),

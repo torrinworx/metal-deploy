@@ -9,7 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 // Add service to system.
 //
 // Creates a new user, clones the git repo,
-pub fn run(repo_url: String, name: Option<String>) {
+pub fn run(repo_url: String, name: Option<String>, branch: Option<String>) {
     let service_name = match name {
         Some(custom_name) => clean_name(custom_name),
         None => {
@@ -31,16 +31,15 @@ pub fn run(repo_url: String, name: Option<String>) {
 
     if user_exists {
         println!(
-			"User {} already exists. Adding the service again will wipe and overwrite the existing service's data entirely.",
-			service_name
-		);
+            "User {} already exists. Adding the service again will wipe and overwrite the existing service's data entirely.",
+            service_name
+        );
 
         if !confirm("Do you want to continue?") {
             println!("Operation aborted.");
             return;
         }
 
-        // Use the delete module's run function
         delete::run(service_name.clone());
     }
 
@@ -62,17 +61,20 @@ pub fn run(repo_url: String, name: Option<String>) {
     }
 
     let home_dir = format!("/home/{}/repo", service_name);
-    let clone_status = Command::new("git")
-        .arg("clone")
-        .arg(&repo_url)
-        .arg(&home_dir)
-        .status()
-        .expect("Failed to execute git clone");
+    let mut clone_cmd = Command::new("git");
+    clone_cmd.arg("clone");
+
+    if let Some(branch_name) = branch {
+        clone_cmd.arg("-b").arg(branch_name);
+    }
+
+    clone_cmd.arg(&repo_url).arg(&home_dir);
+
+    let clone_status = clone_cmd.status().expect("Failed to execute git clone");
 
     if clone_status.success() {
         println!("Repository cloned successfully into {}", home_dir);
 
-        // Create the `metal-deploy.config.json` file
         let config_path = format!("/home/{}/metal-deploy.config.json", service_name);
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -80,9 +82,9 @@ pub fn run(repo_url: String, name: Option<String>) {
             .as_secs();
         let config_content = format!(
             "{{
-	\"name\": \"{}\",
-	\"url\": \"{}\",
-	\"added\": \"{}\"
+    \"name\": \"{}\",
+    \"url\": \"{}\",
+    \"added\": \"{}\"
 }}",
             service_name, repo_url, now
         );
@@ -91,7 +93,6 @@ pub fn run(repo_url: String, name: Option<String>) {
             .expect("Failed to write to config file");
         println!("Service configuration file created at: {}", config_path);
 
-        // Check if `build.sh` exists
         let build_script_path = format!("{}/build.sh", home_dir);
         if !fs::metadata(&build_script_path).is_ok() {
             eprintln!("Service has an invalid repo structure: missing build.sh");
