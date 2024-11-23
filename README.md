@@ -40,3 +40,9 @@ It is assumed that all files and everything that that service needs to run will 
 After a user runs `metal-deploy build` a simple .env file is created in the /home/example folder. This will be referenced by the user service.
 
 Gonna try to build this in rust, we'll see...
+
+
+# Notes:
+
+**Add**
+Services don't need to be stored in a list anywhere, each /home folder will have a deploy-metal.json file that is created that will identifiy it as a service.
