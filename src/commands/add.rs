@@ -1,7 +1,10 @@
+use crate::commands::delete;
 use crate::utils::confirm::confirm;
 use regex::Regex;
+use std::fs::{self, File};
+use std::io::Write;
 use std::process::Command;
-use crate::commands::delete;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 // Add service to system.
 //
@@ -28,9 +31,9 @@ pub fn run(repo_url: String, name: Option<String>) {
 
     if user_exists {
         println!(
-            "User {} already exists. Adding the service again will wipe and overwrite the existing service's data entirely.",
-            service_name
-        );
+			"User {} already exists. Adding the service again will wipe and overwrite the existing service's data entirely.",
+			service_name
+		);
 
         if !confirm("Do you want to continue?") {
             println!("Operation aborted.");
@@ -68,6 +71,33 @@ pub fn run(repo_url: String, name: Option<String>) {
 
     if clone_status.success() {
         println!("Repository cloned successfully into {}", home_dir);
+
+        // Create the `metal-deploy.config.json` file
+        let config_path = format!("/home/{}/metal-deploy.config.json", service_name);
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let config_content = format!(
+            "{{
+	\"name\": \"{}\",
+	\"url\": \"{}\",
+	\"added\": \"{}\"
+}}",
+            service_name, repo_url, now
+        );
+        let mut file = File::create(&config_path).expect("Failed to create config file");
+        file.write_all(config_content.as_bytes())
+            .expect("Failed to write to config file");
+        println!("Service configuration file created at: {}", config_path);
+
+        // Check if `build.sh` exists
+        let build_script_path = format!("{}/build.sh", home_dir);
+        if !fs::metadata(&build_script_path).is_ok() {
+            eprintln!("Service has an invalid repo structure: missing build.sh");
+            return;
+        }
+        println!("Service created successfully: {}", service_name);
     } else {
         eprintln!("Failed to clone repository.");
     }
