@@ -1,7 +1,54 @@
-/*
-Build the service using build.sh, if build.sh does not exist return an error. 
-*/
+use std::process::{Command, Stdio};
+use std::path::Path;
+use std::fs;
 
+/// Build the service by executing its build.sh script.
 pub fn run(service_name: String) {
-	println!("Building service: {}", service_name);
+	let build_script_path = format!("/home/{}/repo/build.sh", service_name);
+
+	// Check if the build.sh file exists
+	if !Path::new(&build_script_path).exists() {
+		eprintln!("Error: build.sh does not exist for service: {}", service_name);
+		return;
+	}
+
+	// Set build directory path inside repo
+	let build_dir_in_repo = format!("/home/{}/repo/build", service_name);
+
+	// Set build directory path in home
+	let build_dir_in_home = format!("/home/{}/build", service_name);
+
+	// Remove previous build directory if it exists in home directory
+	if fs::metadata(&build_dir_in_home).is_ok() {
+		if let Err(e) = fs::remove_dir_all(&build_dir_in_home) {
+			eprintln!("Error removing previous build directory in home: {:?}", e);
+			return;
+		}
+	}
+
+	// Execute the build.sh script and inherit stdout and stderr
+	let mut child = Command::new("bash")
+		.arg(&build_script_path)
+		.current_dir(format!("/home/{}/repo", service_name))
+		.stdout(Stdio::inherit())
+		.stderr(Stdio::inherit())
+		.spawn()
+		.expect("Failed to execute build.sh");
+
+	// Wait for the command to complete
+	let output = child.wait()
+		.expect("Failed to wait on child process");
+
+	if output.success() {
+		println!("Service {} built successfully.", service_name);
+
+		// After successful build, move the build directory to home directory
+		if let Err(e) = fs::rename(&build_dir_in_repo, &build_dir_in_home) {
+			eprintln!("Error moving build directory to home: {:?}", e);
+		} else {
+			println!("Build directory moved to home successfully.");
+		}
+	} else {
+		eprintln!("Failed to build service: {}", service_name);
+	}
 }
