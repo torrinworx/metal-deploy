@@ -10,10 +10,6 @@ A lightweight tool for managing and deploying Git-based applications on bare met
 - `$ metal-deploy stop <git-repo/service_name>`: Stops the running service.
 - `$ metal-deploy delete <git-repo/service_name>`: Removes all associated user files, folders, and dependencies.
 
-### Service Requirements
-
-
-
 ## How it works
 
 This tool is pretty simple, it's goal is just to abstract a few commands for repeatability sake:
@@ -42,3 +38,9 @@ metal-deploy assumes projects have a `build.sh` script that builds a `build` fol
 - Implement a job scheduler that automatically pulls and updates the repository every 24 hours/time interval for automatic deployments.
 - Integrate with CI/CD pipelines (GitHub Actions/GitLab CI/CD) through webhooks or SSH to automate release updates and deployments.
 - Manage multiple deployments of different branches of a given service.
+
+
+# Notes:
+Some handy commands for debugging:
+
+- `cut -d: -f1 /etc/passwd` - list all users
