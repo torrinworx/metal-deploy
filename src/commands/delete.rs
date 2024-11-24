@@ -9,15 +9,15 @@ Delete the user folder and all service/config/env files.
 Before deleting the service ask them if they would like to delete all data, all env variables, and all service data/content.
 */
 pub fn run(service_name: String) {
-    let config_path = format!("/home/{}/metal-deploy.config.json", service_name);
+    // let config_path = format!("/home/{}/metal-deploy.config.json", service_name);
 
-    if !fs::metadata(&config_path).is_ok() {
-        eprintln!(
-            "Error: Cannot delete non metal-deploy user: {}",
-            service_name
-        );
-        return;
-    }
+    // if !fs::metadata(&config_path).is_ok() {
+    //     eprintln!(
+    //         "Error: Cannot delete non metal-deploy user: {}",
+    //         service_name
+    //     );
+    //     return;
+    // }
 
     Command::new("sudo")
         .arg("userdel")
