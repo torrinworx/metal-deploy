@@ -45,8 +45,13 @@ Some handy commands for debugging:
 
 - `cut -d: -f1 /etc/passwd` - list all users
 
+Setup a working demo with OpenGig:
+`sudo cargo run -- add https://github.com/torrinworx/OpenGig.org.git -b metal-deploy`
 
+Mongodb for local testing with my ssh chromebook:
 DB=mongodb://192.168.1.66:27017
+
+I'm running tests for this thing on an acer C720 chromebook, which can run OpenGig, metal-deploy, but it can't run mongodb lol, so I have that hosted on my desktop and need that url to connect, but it works better than bricking my desktop accidentally again.
 
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
