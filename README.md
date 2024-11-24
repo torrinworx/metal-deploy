@@ -44,3 +44,9 @@ metal-deploy assumes projects have a `build.sh` script that builds a `build` fol
 Some handy commands for debugging:
 
 - `cut -d: -f1 /etc/passwd` - list all users
+
+
+DB=mongodb://192.168.1.66:27017
+
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
