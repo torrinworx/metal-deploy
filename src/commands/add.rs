@@ -60,6 +60,13 @@ pub fn run(repo_url: String, name: Option<String>, branch: Option<String>) {
         return;
     }
 
+    Command::new("sudo")
+        .arg("loginctl")
+        .arg("enable-linger")
+        .arg(&service_name)
+        .status()
+        .expect("Failed to enable linger for the user");
+
     let home_dir = format!("/home/{}/repo", service_name);
     let mut clone_cmd = Command::new("git");
     clone_cmd.arg("clone");
