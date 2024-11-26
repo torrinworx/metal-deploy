@@ -1,6 +1,6 @@
 # metal-deploy
 
-A lightweight tool for managing and deploying Git-based applications on bare metal systems.
+A simple system for managing, building, and deploying git repos on bare metal.
 
 ## Features
 
