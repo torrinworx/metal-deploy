@@ -39,8 +39,15 @@ enum Commands {
     Delete {
         service_name: String,
     },
+    Restart {
+        service_name: String,
+    },
+    Update {
+        service_name: String,
+    },
     List,
 }
+
 fn main() {
     let cli = Cli::parse();
 
@@ -51,5 +58,7 @@ fn main() {
         Commands::List => commands::list::run(),
         Commands::Start { service_name } => commands::start::run(service_name),
         Commands::Stop { service_name } => commands::stop::run(service_name),
+        Commands::Restart { service_name } => commands::restart::run(service_name),
+        Commands::Update { service_name } => commands::update::run(service_name),
     }
 }
