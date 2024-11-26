@@ -2,38 +2,46 @@
 
 A simple system for managing, building, and deploying git repos on bare metal.
 
+Using the linux user system, git, systemctl, and systemd, we can acheive almost all the benifets of docker and other containerization tools out there, with the advantage of running applications directly on the metal of a server without the need for a virtualization layer.
+
 ## Features
+- **Add a Service**: `$ metal-deploy add <git_repo_url>`
+	- Adds a new service, creating a user based on the repository name and cloning the repository into the services dedicated user in /home folder.
+- **Build a Service**: `$ metal-deploy build <git-repo/service_name>`
+	- Executes the `build.sh` file from the repository to prepare the service, and provides an optional interactive prompt to create a `.env` file for configuring environment variables.
+- **Start a Service**: `$ metal-deploy start <git-repo/service_name>`
+	- Runs the `run.sh` script to start the service, and setting it up to start on boot.
+- **Stop a Service**: `$ metal-deploy stop <git-repo/service_name>`
+	- Stops a running service.
+- **Delete a Service**: `$ metal-deploy delete <git-repo/service_name>`
+	- Removes a service, including all associated user files, folders, and dependencies from the system.
+- **Restart a Service**: `$ metal-deploy restart <git-repo/service_name>`
+	- Restarts a service.
+- **Update a Service**: `$ metal-deploy update <git-repo/service_name> [--latest-release]`
+	- Updates a service with the latest changes from the repository. You can specify `--latest-release` to update to the latest release version. By default it will simply `git pull` the latest changes of the repo.
+- **List Services**: `$ metal-deploy list`
+	- Displays a list of all services on the system.
 
-- `$ metal-deploy add <git_repo_url>`: Adds a service, creates a user based on the repo name, and clones it into the user folder.
-- `$ metal-deploy build <git-repo/service_name>`: Executes the repository's `./build.sh` file, and provides an interactive `.env` creator.
-- `$ metal-deploy start <git-repo/service_name>`: Runs `./run.sh` and configures the service for deployment, ensuring it starts on boot.
-- `$ metal-deploy stop <git-repo/service_name>`: Stops the running service.
-- `$ metal-deploy delete <git-repo/service_name>`: Removes all associated user files, folders, and dependencies.
+## How it Works
 
-## How it works
+`metal-deploy` is designed to simplify the deployment process by managing each service as a standalone user. Here's how it operates:
 
-This tool is pretty simple, it's goal is just to abstract a few commands for repeatability sake:
+1. **Repository Cloning**: The specified git repository is cloned into the service's home directory (created on clone from the git url) using the latest release or chosen branch. This provides the base code for the service.
 
-1. Create a new user and user folder for the service.
-2. Clone the repository into the user's folder using the latest release.
-3. Execute `./build.sh` to create a `./build` folder containing `./build/run.sh`.
-4. Create a `.env` file for environment configuration based on a repo/.metal-deploy.env file.
-5. Generate a user service file using paths to `./.env` and `./build/run.sh`.
-6. Mount the service to the system and configure it to run on boot with systemd.
+2. **User Creation**: For each service, a new user account is created along with a dedicated directory in `/home/` (e.g., `/home/example`). Isolation and security is inherited by giving the service access only to its directory.
 
-That's the core of things.
+3. **Build Process**: Within the cloned repository, the `build.sh` script is executed. This script should compile or set up the application and produce a `./build` folder containing everything it needs to run; which includes a `run.sh` script to start the service.
 
-For each service, a new user will be created with a dedicated folder in `/home/`, like `/home/example` for the service 'example' or its repository URL. The service will only have access to its own directory, ensuring it's isolated and secure. When `metal-deploy build` is run, a `.env` file will be created in the service's home directory for use by the user service.
+4. **Environment Setup**: A `.env` file is generated based on the `.metal-deploy.env` template found in the repository. This file allows customization of environment variables, prompting user input for any unspecified values. If no .metal-deploy.env file is found, deployment will continue.
 
-The service repo is expected to have at least:
-- `build.sh`: Script that generates a `./build` folder containing a `run.sh` file to start the service.
-- `.metal-deploy.env`: Template file with example environment variables; unpopulated variables will prompt the user for input.
+5. **Service Configuration**: A systemd service file is created for the user, pointing to the `./.env` file and `./build/run.sh`. This makes the service ready to run and ensures that it starts automatically on system boot.
 
-metal-deploy assumes projects have a `build.sh` script that builds a `build` folder containing everything an application needs to run, including a `run.sh` file.
+Note: `metal-deploy` requires the repository to include:
+- A `build.sh` script that generates a `build` directory with all necessary files, including a `run.sh` script to launch the service.
+- A `.metal-deploy.env` template to define environment variables needed for the service. Unspecified variables in this file will prompt user input during setup.
 
 ## TODO:
-
-- 'update' command to pull the latest release of a Git repository to update a service, should be on latest release of a git repo.
+- Service branch cloning implementation: Add a given services main repo, specify the branch to launch within the `build` and `start` commands themselves.
 - Implement a job scheduler that automatically pulls and updates the repository every 24 hours/time interval for automatic deployments.
 - Integrate with CI/CD pipelines (GitHub Actions/GitLab CI/CD) through webhooks or SSH to automate release updates and deployments.
 - Manage multiple deployments of different branches of a given service.
