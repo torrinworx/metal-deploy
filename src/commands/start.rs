@@ -51,8 +51,8 @@ pub fn run(service_name: String) {
     );
 
     systemctl(&service_name, "daemon-reload");
-    systemctl(&service_name, &format!("enable {}", service_name));
-    systemctl(&service_name, &format!("start {}", service_name));
+    systemctl(&service_name, "enable");
+    systemctl(&service_name, "start");
 
     println!(
         "Service {} has been created and started for user {}",
