@@ -29,6 +29,8 @@ enum Commands {
     },
     Build {
         service_name: String,
+        #[arg(short, long, default_value_t = true)]
+        replace_existing: bool,
     },
     Start {
         service_name: String,
@@ -44,6 +46,8 @@ enum Commands {
     },
     Update {
         service_name: String,
+        #[arg(long, default_value_t = false)]
+        latest_release: bool,
     },
     List,
 }
@@ -52,13 +56,23 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Add { repo_url, name, branch } => commands::add::run(repo_url, name, branch),
-        Commands::Build { service_name } => commands::build::run(service_name),
+        Commands::Add {
+            repo_url,
+            name,
+            branch,
+        } => commands::add::run(repo_url, name, branch),
+        Commands::Build {
+            service_name,
+            replace_existing,
+        } => commands::build::run(service_name, replace_existing),
         Commands::Delete { service_name } => commands::delete::run(service_name),
         Commands::List => commands::list::run(),
         Commands::Start { service_name } => commands::start::run(service_name),
         Commands::Stop { service_name } => commands::stop::run(service_name),
         Commands::Restart { service_name } => commands::restart::run(service_name),
-        Commands::Update { service_name } => commands::update::run(service_name),
+        Commands::Update {
+            service_name,
+            latest_release,
+        } => commands::update::run(service_name, latest_release),
     }
 }
