@@ -6,9 +6,9 @@ use std::io::Write;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-// Add service to system.
-//
-// Creates a new user, clones the git repo,
+/* Add service to system.
+Creates a new user, clones the git repo,
+*/
 pub fn run(repo_url: String, name: Option<String>, branch: Option<String>) {
     let service_name = match name {
         Some(custom_name) => clean_name(custom_name),

@@ -39,6 +39,7 @@ metal-deploy assumes projects have a `build.sh` script that builds a `build` fol
 - Integrate with CI/CD pipelines (GitHub Actions/GitLab CI/CD) through webhooks or SSH to automate release updates and deployments.
 - Manage multiple deployments of different branches of a given service.
 
+- Policy on distros and versions. Right now this has been tested and built on Ubuntu 24.04. How do we handle running applications that work on other distros/base images? Should we just assume everything to run on Ubuntu?
 
 # Notes:
 Some handy commands for debugging:

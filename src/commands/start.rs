@@ -5,63 +5,8 @@ use std::io::BufReader;
 use std::io::{self, Write};
 use std::os::unix::fs::symlink;
 use std::path::Path;
-use std::process::Command;
 
-fn run_systemctl_command(service_name: &str, command: &str) {
-    let user_id = Command::new("id")
-        .args(&["-u", service_name])
-        .output()
-        .expect("Failed to get user id")
-        .stdout;
-    let user_id_str = String::from_utf8_lossy(&user_id).trim().to_string();
-
-    let xdg_runtime_dir = format!("/run/user/{}", user_id_str);
-    let dbus_address = format!("unix:path=${}/bus", xdg_runtime_dir);
-
-    // Check and start `dbus-daemon` for the user if necessary
-    let bus_path_string = format!("/run/user/{}/bus", user_id_str);
-    let bus_path = Path::new(&bus_path_string);
-    if !bus_path.exists() {
-        let status = Command::new("sudo")
-            .arg("-u")
-            .arg(service_name)
-            .arg("dbus-daemon")
-            .arg("--session")
-            .arg("--fork")
-            .arg("--address")
-            .arg(&dbus_address)
-            .status();
-
-        if let Err(e) = status {
-            eprintln!(
-                "Failed to start dbus-daemon for user {}: {}",
-                service_name, e
-            );
-            return;
-        }
-    }
-
-    if !bus_path.exists() {
-        eprintln!("D-Bus session bus not available for user {}", service_name);
-        return;
-    }
-
-    // Run the systemctl command
-    let mut env_command = Command::new("su");
-    env_command
-        .arg("-l")
-        .arg(service_name)
-        .arg("-c")
-        .arg(format!(
-            "export DBUS_SESSION_BUS_ADDRESS={} && export XDG_RUNTIME_DIR={} && systemctl --user {}",
-            dbus_address, xdg_runtime_dir, command
-        ))
-        .env("DBUS_SESSION_BUS_ADDRESS", &dbus_address);
-
-        if let Err(e) = env_command.status() {
-        eprintln!("Failed to run systemctl command '{}': {}", command, e);
-    }
-}
+use crate::utils::systemctl::systemctl;
 
 // Start a service by creating an .env file, a systemd service, and executing the run.sh script.
 pub fn run(service_name: String) {
@@ -105,9 +50,9 @@ pub fn run(service_name: String) {
         &service_name,
     );
 
-    run_systemctl_command(&service_name, "daemon-reload");
-    run_systemctl_command(&service_name, &format!("enable {}", service_name));
-    run_systemctl_command(&service_name, &format!("start {}", service_name));
+    systemctl(&service_name, "daemon-reload");
+    systemctl(&service_name, &format!("enable {}", service_name));
+    systemctl(&service_name, &format!("start {}", service_name));
 
     println!(
         "Service {} has been created and started for user {}",
@@ -204,13 +149,12 @@ WantedBy=default.target",
     symlink(service_file_path, symlink_path).expect("Failed to create symbolic link");
 }
 
-
 /*
 I hate all of this, I don't know what a good alternative to this is, I thought that systemd was a server thing
-that didn't require a desktop setup for users. I'm confused as to why we need these to ensure that systemctl 
+that didn't require a desktop setup for users. I'm confused as to why we need these to ensure that systemctl
 works and allows the services to run.
 
-The purpose of metal-deploy is to run on servers and possibly ubuntu-server, we shouldn't need this fakery to 
+The purpose of metal-deploy is to run on servers and possibly ubuntu-server, we shouldn't need this fakery to
 pretend that this is a desktop user. Need to investigate the proper way of doing this.
 
 The environment variables DBUS_SESSION_BUS_ADDRESS and XDG_RUNTIME_DIR are needed for managing user sessions and
@@ -258,7 +202,7 @@ $ systemctl --user <command>
 
 If the env variables are not exported, you get this:
 ```
-$ systemctl --user status 
+$ systemctl --user status
 Failed to connect to bus: No medium found
 $
 ```

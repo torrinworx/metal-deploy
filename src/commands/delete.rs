@@ -1,5 +1,5 @@
 use crate::utils::confirm::confirm;
-use crate::utils::run_systemctl::run_systemctl;
+use crate::utils::systemctl::systemctl;
 
 use std::fs;
 use std::io::ErrorKind;
@@ -14,9 +14,9 @@ pub fn run(service_name: String) {
     let service_file_path = format!("{}/{}.service", service_dir, service_name);
 
     if Path::new(&service_file_path).exists() {
-        run_systemctl(&service_name, "stop");
-        run_systemctl(&service_name, "disable");
-        run_systemctl(&service_name, "daemon-reload");
+        systemctl(&service_name, "stop");
+        systemctl(&service_name, "disable");
+        systemctl(&service_name, "daemon-reload");
         println!("Service {} is stopped and disabled.", service_name);
     } else {
         println!(
