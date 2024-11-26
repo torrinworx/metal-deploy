@@ -9,7 +9,7 @@ use std::path::Path;
 use crate::utils::systemctl::systemctl;
 
 // Start a service by creating an .env file, a systemd service, and executing the run.sh script.
-pub fn run(service_name: String) {
+pub fn run(service_name: String, skip_env_creation: bool) {
     println!("Starting service: {}", service_name);
 
     let home_dir = format!("/home/{}", service_name);
@@ -19,19 +19,21 @@ pub fn run(service_name: String) {
     let service_dir = format!("{}/.config/systemd/user", home_dir);
     let service_file_path = format!("{}/{}.service", service_dir, service_name);
 
-    // Check if the .metal-deploy.env file exists
-    eprintln!("{}", env_template_path);
-    if !Path::new(&env_template_path).exists() {
-        eprintln!(
-            "Error: .metal-deploy.env does not exist for service: {}",
-            service_name
-        );
-        return;
-    }
+    if !skip_env_creation {
+        // Check if the .metal-deploy.env file exists
+        eprintln!("{}", env_template_path);
+        if !Path::new(&env_template_path).exists() {
+            eprintln!(
+                "Error: .metal-deploy.env does not exist for service: {}",
+                service_name
+            );
+            return;
+        }
 
-    // Read the environment template and populate fields
-    let env_variables = read_and_populate_env(&env_template_path);
-    write_env_to_file(&env_path, &env_variables);
+        // Read the environment template and populate fields
+        let env_variables = read_and_populate_env(&env_template_path);
+        write_env_to_file(&env_path, &env_variables);
+    }
 
     // Check if the run.sh file exists
     if !Path::new(&run_script_path).exists() {

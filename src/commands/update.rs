@@ -69,9 +69,7 @@ pub fn run(service_name: String, latest_release: bool) {
         return;
     }
     println!("New build contents moved successfully.");
-
-    // Start the service again
-    start::run(service_name.clone());
+    start::run(service_name.clone(), true);
     println!("Service '{}' updated successfully.", service_name);
 }
 

@@ -34,6 +34,8 @@ enum Commands {
     },
     Start {
         service_name: String,
+        #[arg(short, long, default_value_t = false)]
+        skip_env_creation: bool,
     },
     Stop {
         service_name: String,
@@ -67,7 +69,10 @@ fn main() {
         } => commands::build::run(service_name, replace_existing),
         Commands::Delete { service_name } => commands::delete::run(service_name),
         Commands::List => commands::list::run(),
-        Commands::Start { service_name } => commands::start::run(service_name),
+        Commands::Start {
+            service_name,
+            skip_env_creation,
+        } => commands::start::run(service_name, skip_env_creation),
         Commands::Stop { service_name } => commands::stop::run(service_name),
         Commands::Restart { service_name } => commands::restart::run(service_name),
         Commands::Update {
