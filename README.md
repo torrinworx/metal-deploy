@@ -34,12 +34,18 @@ metal-deploy assumes projects have a `build.sh` script that builds a `build` fol
 ## TODO:
 
 - 'update' command to pull the latest release of a Git repository to update a service, should be on latest release of a git repo.
-- Automatically creates user and user-specific directories for each service.
 - Implement a job scheduler that automatically pulls and updates the repository every 24 hours/time interval for automatic deployments.
 - Integrate with CI/CD pipelines (GitHub Actions/GitLab CI/CD) through webhooks or SSH to automate release updates and deployments.
 - Manage multiple deployments of different branches of a given service.
 
 - Policy on distros and versions. Right now this has been tested and built on Ubuntu 24.04. How do we handle running applications that work on other distros/base images? Should we just assume everything to run on Ubuntu?
+- wrap existing systemctl service commands:
+    - `restart {service_name}`
+    - `enable {service_name}`
+    - `disable {service_name}`
+    - `mask {service_name}`
+    - `status (combo of /is-active and is-enabled imo these can be a single command) {service_name}`
+    - `kill {kill_type: "hard" = 9, "soft" = 15} {service_name}`
 
 # Notes:
 Some handy commands for debugging:
