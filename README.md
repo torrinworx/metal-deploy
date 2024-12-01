@@ -82,3 +82,12 @@ These are working repos that can be ran with metal-deploy:
 - [metal-deploy-lidarr](https://github.com/torrinworx/metal-deploy-lidarr)
 - [metal-deploy-radarr](https://github.com/torrinworx/metal-deploy-radarr)
 - [metal-deploy-readarr](https://github.com/torrinworx/metal-deploy-readarr)
+
+
+# What this tool is:
+A simple way to deploy software on Ubuntu 24.04 and other compatible distros.
+
+# What this tool isn't:
+A virtualization tool that allows you to deploy custom software on every type and version of any distribution.
+
+That's the main way docker and metal-deploy differ, we do not care nore support deployment on an infinite number of distributions/images. Simply because there are no images.
