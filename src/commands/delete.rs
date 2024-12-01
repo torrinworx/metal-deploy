@@ -1,90 +1,84 @@
-use crate::utils::confirm::confirm;
-use crate::utils::systemctl::systemctl;
-
-use std::fs;
-use std::io::ErrorKind;
-use std::path::Path;
 use std::process::Command;
+use std::fs;
 
-
+/// Delete an existing service
 pub fn run(service_name: String) {
-    println!("Deleting service: {}", service_name);
+	println!("Deleting service: {}", service_name);
 
-    let service_dir = format!("/home/{}/.config/systemd/user", service_name);
-    let service_file_path = format!("{}/{}.service", service_dir, service_name);
+	// Stop the service using systemctl within the user's context
+	stop_service(&service_name);
 
-    if Path::new(&service_file_path).exists() {
-        systemctl(&service_name, "stop");
-        systemctl(&service_name, "disable");
-        systemctl(&service_name, "daemon-reload");
-        println!("Service {} is stopped and disabled.", service_name);
-    } else {
-        println!(
-            "No systemd service found for {}, assuming it's already removed.",
-            service_name
-        );
-    }
+	// Remove the systemd service configuration if it exists
+	let service_path = format!("/home/{}/.config/systemd", service_name);
+	if let Err(e) = fs::remove_dir_all(&service_path) {
+		eprintln!("Failed to remove systemd service configuration: {:?}", e);
+	} else {
+		println!("Removed systemd service configuration.");
+	}
 
-    kill_lingering_processes(&service_name);
+	// Kill any remaining processes owned by the user
+	kill_user_processes(&service_name);
 
-    if confirm("Do you want to delete the user and all associated files?") {
-        delete_user_and_home(&service_name);
-    } else {
-        println!("User deletion aborted.");
-    }
+	// Wait for processes to terminate
+	wait_for_processes(&service_name);
+
+	// Delete the service user
+	let userdel_status = Command::new("sudo")
+		.arg("userdel")
+		.arg("-r")
+		.arg(&service_name)
+		.status()
+		.expect("Failed to execute userdel command");
+	
+	if userdel_status.success() {
+		println!("User '{}' and their home directory removed successfully.", service_name);
+	} else {
+		eprintln!("Error: Failed to remove user '{}'.", service_name);
+	}
+
+	println!("Service '{}' fully deleted.", service_name);
 }
 
-fn kill_lingering_processes(service_name: &str) {
-    let ps_output = Command::new("pgrep")
-        .arg("-f")
-        .arg(&format!("{}|/home/{}/", service_name, service_name))
-        .output()
-        .expect("Failed to run pgrep");
+/// Function to stop a running service within the user's context
+fn stop_service(service_name: &str) {
+	use crate::utils::systemctl::systemctl;
 
-    if !ps_output.stdout.is_empty() {
-        let pids_output = String::from_utf8_lossy(&ps_output.stdout);
-        let pids: Vec<&str> = pids_output.lines().collect();
-        for pid in pids {
-            Command::new("sudo")
-                .arg("kill")
-                .arg("-9")
-                .arg(pid)
-                .status()
-                .expect("Failed to kill process");
-        }
-        println!("Killed remaining processes for service: {}", service_name);
-    } else {
-        println!("No lingering processes found for service: {}", service_name);
-    }
+	println!("Attempting to stop the service: {}", service_name);
+	systemctl(service_name, "stop");
 }
 
-fn delete_user_and_home(service_name: &str) {
-    let user_del_status = Command::new("sudo")
-        .arg("userdel")
-        .arg("-r")
-        .arg("-f")
-        .arg(service_name)
-        .status()
-        .expect("Failed to delete user");
+/// Function to kill processes owned by the user
+fn kill_user_processes(service_name: &str) {
+	println!("Killing any remaining processes for user: {}", service_name);
 
-    if !user_del_status.success() {
-        eprintln!("Failed to delete user {}", service_name);
-    }
+	let killall_status = Command::new("sudo")
+		.arg("killall")
+		.arg("-9")
+		.arg("--user")
+		.arg(service_name)
+		.status()
+		.expect("Failed to execute killall command");
 
-    let home_dir = format!("/home/{}", service_name);
+	if !killall_status.success() {
+		eprintln!("Warning: Could not kill all processes for user '{}'.", service_name);
+	}
+}
 
-    if fs::metadata(&home_dir).is_ok() {
-        match fs::remove_dir_all(&home_dir) {
-            Ok(_) => println!("Removed existing directory: {}", home_dir),
-            Err(ref e) if e.kind() == ErrorKind::NotFound => (),
-            Err(e) => {
-                eprintln!(
-                    "Failed to remove existing directory: {}. Error: {:?}",
-                    home_dir, e
-                );
-            }
+/// Function to wait for processes to terminate
+fn wait_for_processes(service_name: &str) {
+    loop {
+        let check_status = Command::new("pgrep")
+            .arg("-u")
+            .arg(service_name)
+            .status()
+            .expect("Failed to execute pgrep command");
+
+        if !check_status.success() {
+            println!("All processes for user '{}' have been terminated.", service_name);
+            break;
         }
-    }
 
-    println!("User {} has been deleted.", service_name);
+        // Optional sleep to reduce CPU usage while waiting
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    }
 }
