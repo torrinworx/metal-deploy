@@ -55,6 +55,8 @@ Note: `metal-deploy` requires the repository to include:
     - `status (combo of /is-active and is-enabled imo these can be a single command) {service_name}`
     - `kill {kill_type: "hard" = 9, "soft" = 15} {service_name}`
 
+- list deploy, deploy a list of repos automatically similar to docker compose.
+
 # Notes:
 Some handy commands for debugging:
 
@@ -70,3 +72,13 @@ I'm running tests for this thing on an acer C720 chromebook, which can run OpenG
 
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+
+# Repo examples
+These are working repos that can be ran with metal-deploy:
+- [opengig.org](https://github.com/torrinworx/OpenGig.org/tree/metal-deploy)
+- [metal-deploy-qbittorrent](https://github.com/torrinworx/metal-deploy-qbittorrent)
+- [metal-deploy-prowlarr](https://github.com/torrinworx/metal-deploy-prowlarr)
+- [metal-deploy-sonarr](https://github.com/torrinworx/metal-deploy-sonarr)
+- [metal-deploy-lidarr](https://github.com/torrinworx/metal-deploy-lidarr)
+- [metal-deploy-radarr](https://github.com/torrinworx/metal-deploy-radarr)
+- [metal-deploy-readarr](https://github.com/torrinworx/metal-deploy-readarr)
