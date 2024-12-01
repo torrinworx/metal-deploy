@@ -1,5 +1,6 @@
 use crate::commands::delete;
 use crate::utils::confirm::confirm;
+use crate::utils::systemctl::systemctl;
 use regex::Regex;
 use std::fs::{self, File};
 use std::io::Write;
@@ -68,38 +69,7 @@ pub fn run(repo_url: String, name: Option<String>, branch: Option<String>) {
         .status()
         .expect("Failed to enable linger for the user");
 
-    // Get user ID for the new service user
-    let user_id = Command::new("id")
-        .args(&["-u", &service_name])
-        .output()
-        .expect("Failed to get user ID")
-        .stdout;
-    let user_id_str = String::from_utf8_lossy(&user_id).trim().to_string();
-
-    // Set DBUS_SESSION_BUS_ADDRESS and verify systemctl works for the user
-    let xdg_runtime_dir = format!("/run/user/{}", user_id_str);
-    let dbus_address = format!("unix:path=${}/bus", xdg_runtime_dir);
-    let systemctl_command = format!(
-        "export DBUS_SESSION_BUS_ADDRESS={} && export XDG_RUNTIME_DIR={} && systemctl --user daemon-reload",
-        dbus_address,
-        xdg_runtime_dir
-    );
-
-    let status = Command::new("su")
-        .arg("-l")
-        .arg(&service_name)
-        .arg("-c")
-        .arg(&systemctl_command)
-        .status()
-        .expect("Failed to set DBUS_SESSION_BUS_ADDRESS or reload systemctl");
-
-    if !status.success() {
-        eprintln!(
-            "Failed to set up systemctl for user {}: {}",
-            service_name, status
-        );
-        return;
-    }
+    systemctl(&service_name, "daemon-reload");
 
     let home_dir = format!("/home/{}/repo", service_name);
     let mut clone_cmd = Command::new("git");
